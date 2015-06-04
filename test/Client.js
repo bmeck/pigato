@@ -20,6 +20,15 @@ describe('Client', function() {
     bhost = location + uuid.v4();
     client = new PIGATO.Client(bhost, clientOpts);
     mockBroker = zmq.socket('router');
+    var _send = mockBroker.send;
+    mockBroker.send = function (arr) {
+      console.log('sending', arr.map(function (i) {
+        return i.length;
+      }).reduce(function (acc, i) {
+        return acc + i;
+      }));
+      return _send.apply(this, arguments);
+    }
     mockBroker.bindSync(bhost);
   })
 
@@ -512,6 +521,7 @@ describe('Client', function() {
     var requestId;
 
     mockBroker.on('message', function(id, clazz, type, topic, rid) {
+console.error('MESSAGE', [].slice.call(arguments).map(String));
       if (type.toString() == MDP.W_HEARTBEAT && topic == undefined) {
         mockBroker.send([id, clazz, MDP.W_HEARTBEAT]);
         return;
@@ -530,6 +540,7 @@ describe('Client', function() {
         assert.equal( requestId , rid.toString())
       }
 
+      console.error('BH', heartbeatCount);
       if (heartbeatCount == 1) {
         done()
       }
